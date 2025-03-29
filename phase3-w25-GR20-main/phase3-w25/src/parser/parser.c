@@ -276,7 +276,7 @@ static ASTNode *parse_if_statement(void) {
     expect(TOKEN_LPAREN);  // expect '('
     node->left = parse_expression(); // condition stored in left child
     expect(TOKEN_RPAREN);  // expect ')'
-    node->right = parse_statement(); // then-branch
+    node->right = parse_block(); // then-branch
     // Optionally parse else branch if present
     if (match(TOKEN_IDENTIFIER) == 0 && strcmp(current_token.lexeme, "else") == 0) {
         advance(); // consume 'else'
@@ -292,7 +292,7 @@ static ASTNode *parse_while_statement(void) {
     expect(TOKEN_LPAREN);
     node->left = parse_expression(); // condition
     expect(TOKEN_RPAREN);
-    node->right = parse_statement(); // loop body
+    node->right = parse_block(); // loop body
     return node;
 }
 
@@ -300,7 +300,7 @@ static ASTNode *parse_while_statement(void) {
 static ASTNode *parse_repeat_statement(void) {
     ASTNode *node = create_node(AST_REPEAT);
     advance(); // consume 'repeat'
-    node->left = parse_statement(); // repeat body
+    node->left = parse_block(); // repeat body
     if (!match(TOKEN_UNTIL)) {
         parse_error(PARSE_ERROR_UNEXPECTED_TOKEN, current_token);
         exit(1);
