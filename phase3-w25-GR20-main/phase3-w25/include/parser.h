@@ -36,17 +36,19 @@ typedef enum {
 } ParseError;
 
 // AST Node structure.
+// Note: We add an "else_branch" pointer for if-statements.
 typedef struct ASTNode {
     ASTNodeType type;           // Node type
     Token token;                // Associated token (useful for error messages)
     struct ASTNode* left;       // Left child (e.g., condition, first statement)
-    struct ASTNode* right;      // Right child (e.g., else branch or next statement)
+    struct ASTNode* right;      // Right child (e.g., then-branch or next statement)
+    struct ASTNode* else_branch; // Optional else branch for if-statements
 } ASTNode;
 
 // Parser interface functions.
-void parser_init(const char* input);
+void parser_init(const char *input);
 ASTNode* parse(void);
-void print_ast(ASTNode* node, int level);
-void free_ast(ASTNode* node);
+void print_ast(ASTNode *node, int level);
+void free_ast(ASTNode *node);
 
 #endif /* PARSER_H */

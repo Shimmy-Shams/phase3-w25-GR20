@@ -1,4 +1,3 @@
-/* parser.c */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -95,6 +94,7 @@ static ASTNode *create_node(ASTNodeType type) {
         node->token = current_token;
         node->left = NULL;
         node->right = NULL;
+        node->else_branch = NULL;
     }
     return node;
 }
@@ -269,7 +269,7 @@ static ASTNode *parse_assignment(void) {
     return node;
 }
 
-// Parse if statement: if (condition) statement
+// Parse if statement: if (condition) statement [else statement]
 static ASTNode *parse_if_statement(void) {
     ASTNode *node = create_node(AST_IF);
     advance(); // consume 'if'
@@ -277,6 +277,11 @@ static ASTNode *parse_if_statement(void) {
     node->left = parse_expression(); // condition stored in left child
     expect(TOKEN_RPAREN);  // expect ')'
     node->right = parse_statement(); // then-branch
+    // Optionally parse else branch if present
+    if (match(TOKEN_IDENTIFIER) == 0 && strcmp(current_token.lexeme, "else") == 0) {
+        advance(); // consume 'else'
+        node->else_branch = parse_statement();
+    }
     return node;
 }
 
@@ -291,7 +296,7 @@ static ASTNode *parse_while_statement(void) {
     return node;
 }
 
-// Parse repeat-until loop: repeat statement until (condition)
+// Parse repeat-until loop: repeat statement until (condition);
 static ASTNode *parse_repeat_statement(void) {
     ASTNode *node = create_node(AST_REPEAT);
     advance(); // consume 'repeat'
@@ -375,7 +380,7 @@ static ASTNode *parse_statement(void) {
     } else if (match(TOKEN_LBRACE)) {
         return parse_block();
     }
-    printf("Syntax Error: Unexpected token '%s' @ \n", current_token.lexeme);
+    printf("Syntax Error: Unexpected token '%s'\n", current_token.lexeme);
     exit(1);
 }
 
@@ -454,12 +459,19 @@ void print_ast(ASTNode *node, int level) {
     }
     print_ast(node->left, level + 1);
     print_ast(node->right, level + 1);
+    // Print else branch if it exists (for if statements)
+    if (node->else_branch) {
+        for (int i = 0; i < level + 1; i++) printf("  ");
+        printf("Else:\n");
+        print_ast(node->else_branch, level + 2);
+    }
 }
 
 void free_ast(ASTNode *node) {
     if (!node) return;
     free_ast(node->left);
     free_ast(node->right);
+    free_ast(node->else_branch);
     free(node);
 }
 
@@ -472,46 +484,39 @@ char* read_file(const char* filename) {
         perror("Error opening file");
         return NULL;
     }
-
     fseek(file, 0L, SEEK_END);
     long size = ftell(file);
     rewind(file);
-
-    if (size < 0) {  // Handle ftell failure
+    if (size < 0) {
         fclose(file);
         perror("ftell failed");
         return NULL;
     }
-
     char *buffer = (char *)malloc(size + 1);
     if (!buffer) {
         fclose(file);
         perror("Memory allocation failed");
         return NULL;
     }
-
     size_t bytesRead = fread(buffer, 1, size, file);
-    buffer[bytesRead] = '\0';  // Use bytesRead, not size
-
+    buffer[bytesRead] = '\0';
     fclose(file);
-
     for (char* p = buffer; *p; ++p) {
         if (*p == '\r') {
-            *p = ' ';  // Or simply remove it by shifting the text left
+            *p = ' ';
         }
     }
-
     return buffer;
 }
 
 int main() {
-    const char *valid_filename = "test/input_valid.txt";
-    const char *invalid_filename = "test/input_invalid.txt";
+    const char *valid_filename = "phase3-w25/test/input_valid.txt";
+    const char *invalid_filename = "phase3-w25/test/input_invalid.txt";    
 
     printf("Parsing valid input from %s:\n", valid_filename);
     char *valid_input = read_file(valid_filename);
     if (valid_input) {
-        printf("Parsing:\n%s\n", valid_input);
+        printf("Input:\n%s\n", valid_input);
         parser_init(valid_input);
         ASTNode *ast = parse();
         if (ast) {
@@ -527,7 +532,7 @@ int main() {
     printf("\nParsing invalid input from %s:\n", invalid_filename);
     char *invalid_input = read_file(invalid_filename);
     if (invalid_input) {
-        printf("Parsing:\n%s\n", invalid_input);
+        printf("Input:\n%s\n", invalid_input);
         parser_init(invalid_input);
         ASTNode *ast = parse();
         if (!ast) {

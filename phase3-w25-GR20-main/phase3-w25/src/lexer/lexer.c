@@ -1,9 +1,7 @@
-/* lexer.c */
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-
 #include "../../include/tokens.h"
 #include "../../include/lexer.h"
 
@@ -59,7 +57,6 @@ void print_token(Token token) {
         print_error(token.error, token.line, token.lexeme);
         return;
     }
-
     printf("Token: ");
     switch(token.type) {
         case TOKEN_NUMBER:     printf("NUMBER"); break;
@@ -74,8 +71,11 @@ void print_token(Token token) {
         case TOKEN_IF:         printf("IF"); break;
         case TOKEN_INT:        printf("INT"); break;
         case TOKEN_PRINT:      printf("PRINT"); break;
+        case TOKEN_WHILE:      printf("WHILE"); break;
+        case TOKEN_REPEAT:     printf("REPEAT"); break;
+        case TOKEN_UNTIL:      printf("UNTIL"); break;
         case TOKEN_EOF:        printf("EOF"); break;
-        default:              printf("UNKNOWN");
+        default:               printf("UNKNOWN");
     }
     printf(" | Lexeme: '%s' | Line: %d\n", token.lexeme, token.line);
 }
@@ -83,24 +83,43 @@ void print_token(Token token) {
 Token get_next_token(const char* input, int* pos) {
     Token token = {TOKEN_ERROR, "", current_line, ERROR_NONE};
     char c;
-
-    // Skip whitespace and track line numbers
-    while ((c = input[*pos]) != '\0' && (c == ' ' || c == '\n' || c == '\t')) {
-        if (c == '\n') {
-            current_line++;
+    
+    // Skip whitespace and update line count.
+    // Also, skip over block comments "/* ... */"
+    while (1) {
+        // Skip whitespace
+        while ((c = input[*pos]) != '\0' && (c == ' ' || c == '\n' || c == '\t')) {
+            if (c == '\n') {
+                current_line++;
+            }
+            (*pos)++;
         }
-        (*pos)++;
+        // Check for block comment start "/*"
+        if (input[*pos] == '/' && input[*pos + 1] == '*') {
+            (*pos) += 2;  // Skip "/*"
+            while (input[*pos] != '\0' && !(input[*pos] == '*' && input[*pos + 1] == '/')) {
+                if (input[*pos] == '\n') {
+                    current_line++;
+                }
+                (*pos)++;
+            }
+            if (input[*pos] != '\0') {
+                (*pos) += 2;  // Skip closing "*/"
+            }
+            continue;  // After skipping the comment, start over.
+        }
+        break;
     }
-
+    
     if (input[*pos] == '\0') {
         token.type = TOKEN_EOF;
         strcpy(token.lexeme, "EOF");
         current_line = 0;
         return token;
     }
-
+    
     c = input[*pos];
-
+    
     // Handle numbers
     if (isdigit(c)) {
         int i = 0;
@@ -109,12 +128,11 @@ Token get_next_token(const char* input, int* pos) {
             (*pos)++;
             c = input[*pos];
         } while (isdigit(c) && i < sizeof(token.lexeme) - 1);
-
         token.lexeme[i] = '\0';
         token.type = TOKEN_NUMBER;
         return token;
     }
-
+    
     // Handle identifiers and keywords
     if (isalpha(c) || c == '_') {
         int i = 0;
@@ -123,9 +141,7 @@ Token get_next_token(const char* input, int* pos) {
             (*pos)++;
             c = input[*pos];
         } while ((isalnum(c) || c == '_') && i < sizeof(token.lexeme) - 1);
-
         token.lexeme[i] = '\0';
-
         // Check if it's a keyword
         TokenType keyword_type = is_keyword(token.lexeme);
         if (keyword_type) {
@@ -135,32 +151,31 @@ Token get_next_token(const char* input, int* pos) {
         }
         return token;
     }
-
+    
     // Handle operators and delimiters
     (*pos)++;
     token.lexeme[0] = c;
     token.lexeme[1] = '\0';
-
     switch(c) {
         case '+': case '-': case '*': case '/':
             token.type = TOKEN_OPERATOR;
             break;
         case '>':
-            if (input[*pos] == '=') { // Check for >=
+            if (input[*pos] == '=') {
                 (*pos)++;
                 strcpy(token.lexeme, ">=");
             }
             token.type = TOKEN_OPERATOR;
             break;
         case '<':
-            if (input[*pos] == '=') { // Check for <=
+            if (input[*pos] == '=') {
                 (*pos)++;
                 strcpy(token.lexeme, "<=");
             }
             token.type = TOKEN_OPERATOR;
             break;
         case '=':
-            if (input[*pos] == '=') { // Check for ==
+            if (input[*pos] == '=') {
                 (*pos)++;
                 strcpy(token.lexeme, "==");
                 token.type = TOKEN_OPERATOR;
@@ -187,27 +202,5 @@ Token get_next_token(const char* input, int* pos) {
             token.error = ERROR_INVALID_CHAR;
             break;
     }
-
     return token;
 }
-
-// int main() {
-//     const char *input = "int x = 123;\n"   // Basic declaration and number
-//                        "test_var = 456;\n"  // Identifier and assignment
-//                        "print x;\n"         // Keyword and identifier
-//                        "if (y > 10) {\n"    // Keywords, identifiers, operators
-//                        "    @#$ invalid\n"  // Error case
-//                        "    x = ++2;\n"     // Consecutive operator error
-//                        "}";
-//
-//     printf("Analyzing input:\n%s\n\n", input);
-//     int position = 0;
-//     Token token;
-//
-//     do {
-//         token = get_next_token(input, &position);
-//         print_token(token);
-//     } while (token.type != TOKEN_EOF);
-//
-//     return 0;
-// }

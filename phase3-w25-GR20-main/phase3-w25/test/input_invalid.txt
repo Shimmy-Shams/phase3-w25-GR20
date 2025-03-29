@@ -1,12 +1,21 @@
-int x;
-x = 42;
-if (x < 100) {
-    print x;
+/* input_invalid.txt */
 
-while (x > 0) {
-    x = x - 1;
+/* Test Case 1: Missing Identifier */
+int ;
+x = 42;
+
+/* Test Case 2: Missing Semicolon */
+int y
+y = 10;
+
+/* Test Case 3: Missing Parenthesis in if Statement */
+if x < 100) {
+    print x;
 }
-repeat {
-    x = x + 2;
-} until (x == 10);
-x = factorial(5) + (3 + 4) * 2;
+
+/* Test Case 4: Missing Block for while Loop */
+while (x > 0)
+    x = x - 1;
+
+/* Test Case 5: Invalid Expression (Consecutive Operators) */
+x = 5 + * 3;

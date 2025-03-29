@@ -1,12 +1,35 @@
+/* input_valid.txt */
+
+/* Test Case 1: Basic Declaration and Assignment */
 int x;
 x = 42;
+
+/* Test Case 2: If Statement with Block */
 if (x < 100) {
     print x;
 }
+
+/* Test Case 3: While Loop */
 while (x > 0) {
     x = x - 1;
 }
+
+/* Test Case 4: Repeat-Until Loop */
 repeat {
     x = x + 2;
 } until (x == 10);
+
+/* Test Case 5: Factorial Function Call and Complex Expression */
 x = factorial(5) + (3 + 4) * 2;
+
+/* Test Case 6: Nested Block with Declaration and If */
+{
+    int y;
+    y = 5;
+    if (y == 5) {
+        print y;
+    }
+}
+
+/* Test Case 7: Complex Arithmetic Expression */
+x = (x + 3) * (x - 2) / 4;
