@@ -1,0 +1,3 @@
+D:/GitHub/phase2-w25-GR20/phase2-w25/CMakeFiles/phase2-w25.dir
+D:/GitHub/phase2-w25-GR20/phase2-w25/CMakeFiles/edit_cache.dir
+D:/GitHub/phase2-w25-GR20/phase2-w25/CMakeFiles/rebuild_cache.dir
